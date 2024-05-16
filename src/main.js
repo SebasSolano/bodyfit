@@ -9,12 +9,12 @@ import { initializeApp } from "firebase/app";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyCO3l55aX_ioxH73LGGSilAyrpjw5zqCj4",
-  authDomain: "grade-gain.firebaseapp.com",
-  projectId: "grade-gain",
-  storageBucket: "grade-gain.appspot.com",
-  messagingSenderId: "872835697836",
-  appId: "1:872835697836:web:cbca603b9e5694dba22309"
+  apiKey: "AIzaSyAJk1Jz4G4E9aFVDMyVyNU-4Aupwx-t8Ug",
+  authDomain: "gym-app-f7fa2.firebaseapp.com",
+  projectId: "gym-app-f7fa2",
+  storageBucket: "gym-app-f7fa2.appspot.com",
+  messagingSenderId: "36618322621",
+  appId: "1:36618322621:web:fb46688b0534ba2964add4"
 };
 
 // Initialize Firebase
