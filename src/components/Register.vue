@@ -7,26 +7,36 @@
     CardHeader,
     CardTitle,
   } from "@/components/ui/card";
-  import { defineProps } from 'vue';
   import { useRouter } from "vue-router";
-  import { ref } from "vue";
+  import { ref, watch } from "vue";
+  import { defineEmits } from "vue";
 
   const props = defineProps({
     title: String,
-    description: String
+    description: String,
   });
+
+  const emits = defineEmits(["login"]);
+
   const router = useRouter();
 
-  const email = ref(localStorage.getItem("email") || "");
+  const email = ref("");
+  const isLogin = ref(false);
 
   const backPage = () => {
-    if(email == ''){
-      router.go(-1);
-    }else{
-      localStorage.removeItem("email")
-      router.push("/login");
+    if (!localStorage.getItem("email")) {
+      console.log("entro 1");
+      localStorage.removeItem("email");
+      emits("login", { isLogin: isLogin.value, email: email.value });
+      router.push("/");
+    } else {
+      //router.push("/login");
+      console.log("entro 2");
+      localStorage.removeItem("email");
+      isLogin.value = true;
+      emits("login", { isLogin: isLogin.value, email: email.value });
+      router.push("/");
     }
-    
   };
 </script>
 

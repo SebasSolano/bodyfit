@@ -5,12 +5,12 @@ import FooterMenu from "@/components/FooterMenu.vue";
 <template>
   <div id="app" class="flex flex-col min-h-screen bg-foreground">
     <header class="bg-primary text-accent text-center p-6 md:p-10 rounded-b-lg">
-      <h1 class="text-5xl md:text-8xl font-bold">Home</h1>
+      <h1 class="text-5xl md:text-8xl font-bold">Plan</h1>
     </header>
     <main class="flex-1 flex flex-col items-center justify-start p-4 md:p-10 space-y-8">
       <div class="w-full max-w-md text-center">
         <h2 class="text-2xl md:text-3xl font-bold text-accent mb-2">
-          ¡Home! 💪
+          ¡Plan! 💪
         </h2>
       </div>
     </main>

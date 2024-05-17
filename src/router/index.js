@@ -11,6 +11,20 @@ const router = createRouter({
         requireAuth: true,
       },
     },
+        {
+      path: "/plan",
+      component: () => import("../views/Plan.vue"),
+      meta: {
+        requireAuth: true,
+      },
+    },
+    {
+      path: "/profile",
+      component: () => import("../views/Profile.vue"),
+      meta: {
+        requireAuth: true,
+      },
+    },
     { path: "/login", component: () => import("../views/LoginBase.vue"), meta: { guestOnly: true } },
     { path: "/register", component: () => import("../views/RegisterBase.vue"), meta: { guestOnly: true } },
   ],

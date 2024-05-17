@@ -2,12 +2,22 @@
   import { AspectRatio } from "@/components/ui/aspect-ratio";
   import { Button } from "@/components/ui/button";
   import { useRouter } from "vue-router";
+  import { ref } from "vue";
   const router = useRouter();
+  import { defineEmits } from "vue";
+
+  const emits = defineEmits(["login"]);
+  const isLogin = ref(false)
+
+  const handleLogin = () => {
+    console.log("entro a handleLogin")
+    isLogin.value = true;
+    emits("login", isLogin.value);
+  };
 
   const handleRegister = () => {
     router.push("/register");
-  }
-
+  };
 </script>
 
 <template>
@@ -43,9 +53,15 @@
     <footer
       class="bg-primary text-white text-center p-4 rounded-t-lg w-full max-w-md"
     >
-      <Button @click="handleLogin" class="bg-foreground w-full mb-2 md:mb-4"> Entrar </Button>
-      <p class="mb-2">¿No tienes cuenta?, Registrate aqui <span class="emoji">👇</span></p>
-      <Button @click="handleRegister" class="bg-foreground w-full"> Registrarse </Button>
+      <Button @click="handleLogin" class="bg-foreground w-full mb-2 md:mb-4">
+        Entrar
+      </Button>
+      <p class="mb-2">
+        ¿No tienes cuenta?, Registrate aqui <span class="emoji">👇</span>
+      </p>
+      <Button @click="handleRegister" class="bg-foreground w-full">
+        Registrarse
+      </Button>
     </footer>
   </div>
 </template>

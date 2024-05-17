@@ -71,7 +71,7 @@
 
   const register = () => {
     const valueString = value.value.join("");
-    const encryptedValue = encrypt(valueString);
+    const encryptedValue = valueString+"MyEncryptedValue";
     console.log(encryptedValue);
 
     createUserWithEmailAndPassword(auth, email.value, encryptedValue)
@@ -97,7 +97,7 @@
         console.log("Failed to register: ", err.code);
         toast({
           title: "Error",
-          description: "No se puedo registrar!",
+          description: "No se puedo registrar!", 
         });
       });
   };
@@ -106,12 +106,13 @@
   <Register title="Registrarse" description="Ingresa los datos y continua para poder registrarte 💪" v-if="validateNext">
     <Toaster />
     <div class="grid gap-5 mt-10">
-      <div class="grid grid-cols-2 gap-4">
+      <div class="grid grid-cols-2 gap-4 ">
         <div class="grid gap-2">
           <Label for="first-name">First name</Label>
           <Input
             v-model="firstName"
             id="first-name"
+            class="text-foreground"
             placeholder="Max"
             required
           />
@@ -121,6 +122,7 @@
           <Input
             v-model="lastName"
             id="last-name"
+            class="text-foreground"
             placeholder="Robinson"
             required
           />
