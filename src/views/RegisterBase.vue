@@ -31,10 +31,12 @@
     getAuth,
     createUserWithEmailAndPassword,
     sendEmailVerification,
-    signOut, // Importa signOut
+    signOut,
+    updateProfile, // Importa signOut
   } from "firebase/auth";
   import { useToast } from "@/components/ui/toast/use-toast";
   import { Toaster } from "@/components/ui/toast";
+  import { addUser } from "@/services/User.service";
 
   import { encrypt } from "@/js/encrypt.js";
 
@@ -67,11 +69,9 @@
     }
   };
 
-
-
-  const register = () => {
+ const register = () => {
     const valueString = value.value.join("");
-    const encryptedValue = valueString+"MyEncryptedValue";
+    const encryptedValue = valueString + "MyEncryptedValue";
     console.log(encryptedValue);
 
     createUserWithEmailAndPassword(auth, email.value, encryptedValue)
@@ -79,8 +79,31 @@
         sendEmailVerification(auth.currentUser)
           .then(() => {
             console.log("Email verification sent!");
+            const displayName = `${firstName.value} ${lastName.value}`;
+            const createdAt = new Date().toTimeString();
+            const updatedAt = new Date().toTimeString();
+            updateProfile(auth.currentUser, {
+              displayName: displayName,
+            });
+            addUser(data.user.uid, {
+              uuid: data.user.uid,
+              username: displayName,
+              email: email.value,
+              sex: sex.value,
+              age: age.value,
+              height: 0,
+              weight: 0,
+              bmi: {
+                percentile: 0,
+                status: null,
+                statusValue: true
+              },
+              createdAt: createdAt,
+              updatedAt: updatedAt,
+            });
             signOut(auth).then(() => {
               localStorage.setItem("email", email.value);
+              localStorage.setItem("uuid", data.user.uid);
               console.log("User signed out after registration.");
               router.push("/login");
             });
@@ -97,16 +120,20 @@
         console.log("Failed to register: ", err.code);
         toast({
           title: "Error",
-          description: "No se puedo registrar!", 
+          description: "No se puedo registrar!",
         });
       });
   };
 </script>
 <template>
-  <Register title="Registrarse" description="Ingresa los datos y continua para poder registrarte 💪" v-if="validateNext">
+  <Register
+    title="Registrarse"
+    description="Ingresa los datos y continua para poder registrarte 💪"
+    v-if="validateNext"
+  >
     <Toaster />
     <div class="grid gap-5 mt-10">
-      <div class="grid grid-cols-2 gap-4 ">
+      <div class="grid grid-cols-2 gap-4">
         <div class="grid gap-2">
           <Label for="first-name">First name</Label>
           <Input
@@ -195,7 +222,11 @@
       </div>
     </div>
   </Register>
-  <Register title="Registrarse" description="Ingresa los datos y continua para poder registrarte 💪" v-if="!validateNext">
+  <Register
+    title="Registrarse"
+    description="Ingresa los datos y continua para poder registrarte 💪"
+    v-if="!validateNext"
+  >
     <Toaster />
     <div class="grid gap-5 mt-10">
       <div class="grid gap-2 text-center">

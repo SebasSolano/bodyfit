@@ -4,10 +4,12 @@
   import { useRouter } from "vue-router";
   import { ref } from "vue";
   const router = useRouter();
-  import { defineEmits } from "vue";
+  import { defineEmits } from "vue"
+  import {random} from 'positivity-api'
 
   const emits = defineEmits(["login"]);
   const isLogin = ref(false)
+  const posi = ref(random())
 
   const handleLogin = () => {
     console.log("entro a handleLogin")
@@ -18,40 +20,41 @@
   const handleRegister = () => {
     router.push("/register");
   };
+
+  const next = () => {
+    posi.value = random()
+  }
 </script>
 
 <template>
   <div id="app" class="flex flex-col min-h-screen bg-foreground">
-    <header class="bg-primary text-accent text-center p-6 md:p-10 rounded-b-lg">
+    <header class="bg-primary text-accent text-center p-6 md:p-10 fixed top-0 left-0 right-0 z-10 rounded-b-lg">
       <h1 class="text-5xl md:text-8xl font-bold">BodyFit</h1>
     </header>
     <main
-      class="flex-1 flex flex-col items-center justify-start p-4 md:p-10 space-y-8"
+      class="flex-1 overflow-auto p-4 md:p-10 space-y-8 mt-20 mb-16"
     >
-      <AspectRatio :ratio="16 / 9" class="bg-muted rounded w-full max-w-md">
+    <div class="w-full text-center pt-10">
+      <AspectRatio :ratio="16 / 9" class="bg-muted rounded w-full ">
         <img
           src="https://web-back.perfectgym.com/sites/default/files/styles/900x/public/equipment%20%286%29.webp?itok=UbaJqjIr"
           alt="Photo by Drew Beamer"
           class="rounded object-cover w-full h-full"
         />
       </AspectRatio>
-      <div class="w-full max-w-md text-center">
-        <h2 class="text-2xl md:text-3xl font-bold text-accent mb-2">
+      <div class="w-full  text-center ">
+        <h2 class="text-2xl md:text-3xl font-bold text-accent mb-2 mt-10">
           ¡Únete a BodyFit! 💪
         </h2>
-        <p class="text-lg md:text-xl text-muted mb-4">
-          Mejora tu físico y tu salud con nuestro programa personalizado. 🏋️‍♀️
-        </p>
-        <p class="text-lg md:text-xl text-muted mb-8">
-          Accede a los mejores entrenadores y rutinas. 🌟
-        </p>
-        <p class="text-lg md:text-xl text-muted">
-          Transforma tu vida hoy con BodyFit. 🌟💪
+
+        <p @click="next" class="  pointer-events-auto transition-transform duration-1000 transform hover:scale-105 text-lg md:text-xl text-accent mt-10 bg-green-500 rounded-2xl p-3">
+          {{ posi }} 🌟💪
         </p>
       </div>
+    </div>
     </main>
     <footer
-      class="bg-primary text-white text-center p-4 rounded-t-lg w-full max-w-md"
+      class=" fixed bottom-0 left-0 right-0 z-10 bg-primary text-white text-center p-4 rounded-t-lg  "
     >
       <Button @click="handleLogin" class="bg-foreground w-full mb-2 md:mb-4">
         Entrar
