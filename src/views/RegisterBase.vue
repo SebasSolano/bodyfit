@@ -96,7 +96,7 @@
               bmi: {
                 percentile: 0,
                 status: null,
-                statusValue: true
+                statusValue: false
               },
               createdAt: createdAt,
               updatedAt: updatedAt,
@@ -137,7 +137,7 @@
         <div class="grid gap-2">
           <Label for="first-name">First name</Label>
           <Input
-            v-model="firstName"
+          v-model="firstName"
             id="first-name"
             class="text-foreground"
             placeholder="Max"
@@ -147,7 +147,7 @@
         <div class="grid gap-2">
           <Label for="last-name">Last name</Label>
           <Input
-            v-model="lastName"
+          v-model="lastName"
             id="last-name"
             class="text-foreground"
             placeholder="Robinson"
@@ -159,7 +159,7 @@
       <div class="grid grid-cols-2 gap-4">
         <div class="grid gap-2">
           <Label for="first-name">Sexo</Label>
-          <Select v-model="sex">
+          <Select :v-model="sex">
             <SelectTrigger>
               <SelectValue class="text-foreground" placeholder="Tu Sexo" />
             </SelectTrigger>
@@ -175,7 +175,7 @@
         <div class="grid gap-2">
           <Label for="edad">Edad</Label>
           <Input
-            v-model="age"
+          v-model="age"
             id="edad"
             class="text-foreground"
             type="number"

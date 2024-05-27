@@ -4,7 +4,14 @@
   import { Button } from "@/components/ui/button";
   import FooterMenu from "@/components/FooterMenu.vue";
   import { useRouter } from "vue-router";
-  import { getUser, updateUser } from "@/services/User.service";
+  import { Input } from "@/components/ui/input";
+  import { Label } from "@/components/ui/label";
+  import {
+    getUser,
+    updateUser,
+    addHistoryEntry,
+    getUserHistory,
+  } from "@/services/User.service";
   import {
     Card,
     CardContent,
@@ -24,7 +31,7 @@
     weight: 0,
   });
 
-  const uuid = ref(localStorage.getItem("uuid"))
+  const uuid = ref(localStorage.getItem("uuid"));
 
   // New height and weight
   const newHeight = ref(user.value.height);
@@ -34,6 +41,11 @@
   const bmi = ref(null);
   const bmiStatus = ref("");
   const bmiHistory = ref([]);
+
+  const router = useRouter();
+  const auth = getAuth();
+  const percentile = ref(0);
+  const status = ref("");
 
   // Calculate BMI
   const calculateBMI = (height, weight) => {
@@ -51,42 +63,52 @@
   };
 
   // Update user metrics
-  const updateUserMetrics = () => {
+  const updateUserMetrics = async () => {
     user.value.height = newHeight.value;
     user.value.weight = newWeight.value;
     bmi.value = calculateBMI(newHeight.value, newWeight.value);
     bmiStatus.value = getBMIStatus(bmi.value);
-    const updatedAt = new Date().toTimeString();
+    const updatedAt = new Date().toISOString();
     updateUser(uuid.value, {
+      height: newHeight.value,
+      weight: newWeight.value,
       bmi: {
         percentile: bmi.value,
-        status: bmiStatus.value
+        status: bmiStatus.value,
+        statusValue: false,
       },
-      updatedAt: updatedAt
-    })
-    percentile.value = bmi.value
-    bmiHistory.value.push({ weight: newWeight.value, bmi: bmi.value });
+      updatedAt: updatedAt,
+    });
+    await addHistoryEntry(uuid.value, newWeight.value, bmi.value);
+    percentile.value = bmi.value;
+
+    bmiHistory.value.push({
+      weight: newWeight.value,
+      bmi: bmi.value,
+      date: new Date().toISOString(),
+    });
     newHeight.value = user.value.height;
     newWeight.value = user.value.weight;
   };
 
-
-  const router = useRouter();
-  const auth = getAuth();
-  const percentile = ref(0)
-
   onMounted(async () => {
-    const planData = await getUser(uuid.value);
-    user.value = planData
-    percentile.value = user.value.bmi.percentile
+    const userData = await getUser(uuid.value);
+    user.value = userData;
+    percentile.value = user.value.bmi.percentile;
+    status.value = user.value.bmi.status;
     console.log(user.value);
 
+    // Obtener el historial del usuario
+    const history = await getUserHistory(uuid.value);
+    bmiHistory.value = history;
   });
 
   const logout = () => {
     signOut(auth).then(() => {
       localStorage.setItem("email", user.email);
       localStorage.removeItem("uuid");
+      localStorage.removeItem("checkOne");
+      localStorage.removeItem("checkTwo");
       router.push("/");
     });
   };
@@ -109,13 +131,21 @@
           <CardContent>
             <p><strong>Nombre:</strong> {{ user.username }}</p>
             <p><strong>Email:</strong> {{ user.email }}</p>
-            <p><strong>Sexo:</strong> {{ user.sex === 'M' ? 'Masculino' : user.sex === 'F' ? 'Femenino' : 'No especificado' }}</p>
+            <p>
+              <strong>Sexo:</strong>
+              {{
+                user.sex === "M"
+                  ? "Masculino"
+                  : user.sex === "F"
+                  ? "Femenino"
+                  : "No especificado"
+              }}
+            </p>
             <p><strong>Edad:</strong> {{ user.age }} años</p>
             <p><strong>Altura:</strong> {{ user.height }} cm</p>
             <p><strong>Peso:</strong> {{ user.weight }} kg</p>
-            <p>
-              <strong>IMC:</strong> {{ percentile }}
-            </p>
+            <p><strong>IMC:</strong> {{ percentile }}</p>
+            <p><strong>Tipo:</strong> {{ status === "" ? "" : status }}</p>
           </CardContent>
           <CardFooter class="justify-center">
             <Button @click="logout" class="bg-foreground p-4 rounded-full"
@@ -130,14 +160,14 @@
             <CardTitle>Actualizar Altura y Peso</CardTitle>
           </CardHeader>
           <CardContent class="text-accent">
-            <form class="text-accent"  @submit.prevent="updateUserMetrics">
-              <div  class="mb-4 ">
+            <form class="text-accent" @submit.prevent="updateUserMetrics">
+              <div class="mb-4">
                 <label
                   for="height"
                   class="block text-sm font-medium text-accent"
                   >Altura (cm)</label
                 >
-                <input
+                <Input
                   type="number"
                   id="height"
                   v-model="newHeight"
@@ -146,16 +176,14 @@
                 />
               </div>
               <div class="mb-4 text-accent">
-                <label
-                  for="weight"
-                  class="block text-sm font-medium "
+                <label for="weight" class="block text-sm font-medium"
                   >Peso (kg)</label
                 >
-                <input
+                <Input
                   type="number"
                   id="weight"
                   v-model="newWeight"
-                  class="mt-1 block text-accent w-full border border-gray-300 rounded-md shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+                  class="col-span-3 p-1 mt-1 block text-accent w-full border border-gray-300 rounded-md shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
                   required
                 />
               </div>
@@ -176,15 +204,16 @@
         <!-- BMI History Card -->
         <Card v-if="percentile > 0" class="bg-primary text-accent">
           <CardHeader>
-            <CardTitle>Historial de IMC</CardTitle>
+            <CardTitle class="text-center">Historial de IMC</CardTitle>
           </CardHeader>
           <CardContent>
             <ul>
               <li v-for="(record, index) in bmiHistory" :key="index">
-                <p>
-                  <strong>Peso:</strong> {{ record.weight }} kg -
-                  <strong>IMC:</strong> {{ record.bmi }}
-                </p>
+                <div class="border border-gray-300 p-2 rounded mt-2">
+                  <p><strong>Peso:</strong> {{ record.weight }} kg</p>
+                  <p><strong>IMC:</strong> {{ record.bmi }}</p>
+                  <p><strong>Dia:</strong> {{ record.date }}</p>
+                </div>
               </li>
             </ul>
           </CardContent>

@@ -175,7 +175,7 @@
 
             <div class="grid gap-2">
               <Input
-                v-model="newEmail"
+              v-model="newEmail"
                 id="newEmail"
                 type="email"
                 class="text-foreground"

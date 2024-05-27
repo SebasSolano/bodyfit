@@ -7,7 +7,12 @@
     AccordionItem,
     AccordionTrigger,
   } from "@/components/ui/accordion";
-  import { getPlan } from "@/services/User.service";
+  import {
+    getPlan,
+    getUser,
+    updateUser,
+    addHistoryEntry,
+  } from "@/services/User.service";
   import {
     Card,
     CardContent,
@@ -17,6 +22,7 @@
     CardTitle,
   } from "@/components/ui/card";
   import { Label } from "@/components/ui/label";
+  import { Input } from "@/components/ui/input";
   import { Switch } from "@/components/ui/switch";
   import {
     AlertDialog,
@@ -29,27 +35,85 @@
     AlertDialogTitle,
     AlertDialogTrigger,
   } from "@/components/ui/alert-dialog";
+  import { Toaster } from "@/components/ui/toast";
+  import { useToast } from "@/components/ui/toast/use-toast";
+  import { useRouter } from "vue-router";
+  import { Button } from "@/components/ui/button";
+  import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+  } from "@/components/ui/dialog";
 
   const defaultValue = "gym-item-1";
-  const bmiType = "Sobrepeso"; // Cambia esto según el plan que necesites
 
   const gymPlan = ref([]);
   const foodPlan = ref([]);
-  const bmi = ref("");
+  const bmi = ref(null);
+  const bmiStatus = ref("");
 
-  const checkOne = ref(false);
-  const checkTwo = ref(false);
+  const newWeight = ref(0);
+
+  const checkOne = ref(
+    localStorage.getItem("checkOne") ? localStorage.getItem("checkOne") : false
+  );
+  const checkTwo = ref(
+    localStorage.getItem("checkTwo") ? localStorage.getItem("checkTwo") : false
+  );
+  const uuid = ref(localStorage.getItem("uuid"));
+  const { toast } = useToast();
+  const router = useRouter();
+
+  // User data
+  const user = ref({
+    username: "Null",
+    email: "NUll",
+    gender: "NAn",
+    age: 0,
+    height: 0,
+    weight: 0,
+  });
+
+  const statusValue = ref(false);
+
+  // Calculate BMI
+  const calculateBMI = (height, weight) => {
+    //console.log(height, weight);
+    const heightInMeters = height / 100;
+    //console.log(height, weight);
+    const bmi = (weight / (heightInMeters * heightInMeters)).toFixed(1);
+    return bmi;
+  };
+
+  // Get BMI status
+  const getBMIStatus = (bmi) => {
+    if (bmi < 18.5) return "Bajo peso";
+    if (bmi >= 18.5 && bmi <= 24.9) return "Peso normal";
+    if (bmi >= 25 && bmi <= 29.9) return "Sobrepeso";
+    if (bmi >= 30) return "Obesidad";
+  };
 
   const handleChange = (checked) => {
     if (checked === "checkOne") {
       checkOne.value = true;
+      localStorage.setItem("checkOne", checkOne.value);
     } else {
       checkTwo.value = true;
+      localStorage.setItem("checkTwo", checkTwo.value);
     }
   };
 
   onMounted(async () => {
-    const planData = await getPlan(bmiType);
+    const userData = await getUser(uuid.value);
+    user.value = userData;
+
+    statusValue.value = user.value.bmi.statusValue;
+
+    const planData = await getPlan(user.value.bmi.status);
     if (planData) {
       bmi.value = planData.bmi;
 
@@ -66,8 +130,50 @@
       }));
     }
   });
-  const validate = () => {
-    // Lógica de validación
+
+  const addNewPlan = () => {
+    const updatedAt = new Date().toISOString();
+    if (user.value.bmi.status === null || user.value.bmi.percentile === 0) {
+      toast({
+        title: "Error",
+        description: "Debes actualizar tus datos primero en Profile!",
+      });
+      setTimeout(() => {
+        router.push("/profile");
+      }, 5500);
+    } else {
+      updateUser(uuid.value, {
+        bmi: {
+          percentile: user.value.bmi.percentile,
+          status: user.value.bmi.status,
+          statusValue: true,
+        },
+        updatedAt: updatedAt,
+      });
+      router.go("/plan");
+    }
+  };
+
+  const validate = async () => {
+    //console.log(newWeight.value)
+    const updatedAt = new Date().toISOString();
+    bmi.value = calculateBMI(user.value.height, newWeight.value);
+    //console.log(bmi.value);
+    bmiStatus.value = getBMIStatus(bmi.value);
+    //console.log(bmiStatus.value)
+   await updateUser(uuid.value, {
+      weight: newWeight.value,
+      bmi: {
+        percentile: bmi.value,
+        status: bmiStatus.value,
+        statusValue: false,
+      },
+      updatedAt: updatedAt,
+    });
+    await addHistoryEntry(uuid.value, newWeight.value, bmi.value);
+    localStorage.removeItem("checkOne");
+    localStorage.removeItem("checkTwo");
+    router.push("/profile");
   };
 </script>
 
@@ -81,41 +187,70 @@
     <main
       class="flex-1 overflow-auto p-10 md:p-10 space-y-8 mt-20 mb-16 relative text-accent"
     >
+      <Toaster />
       <div
+        v-if="statusValue"
         class="flex items-center gap-x-2 bg-primary p-3 border-solid border-2 border-green-500 rounded-lg"
       >
         <h1>Planes completados:</h1>
         <h1>
           {{
-            checkOne && checkTwo
-              ? "2 / 2"
-              : checkOne || checkTwo
-              ? "1 / 2"
-              : "0 / 2"
+            checkOne && checkTwo ? "2/2" : checkOne || checkTwo ? "1/2" : "0/2"
           }}
         </h1>
-        <Button
-          class="bg-foreground p-2 rounded-full ml-16"
-          if="checkOne && checkTwo"
-          @click="validate"
-          ><svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="icon icon-tabler icon-tabler-circle-check"
-            width="32"
-            height="32"
-            viewBox="0 0 24 24"
-            stroke-width="1.5"
-            stroke="#7bc62d"
-            fill="none"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-            <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
-            <path d="M9 12l2 2l4 -4" /></svg
-        ></Button>
+        <Dialog>
+          <DialogTrigger as-child>
+            <Button
+              v-if="checkOne && checkTwo"
+              class="bg-foreground p-2 rounded-full ml-16"
+              
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="icon icon-tabler icon-tabler-circle-check"
+                width="32"
+                height="32"
+                viewBox="0 0 24 24"
+                stroke-width="1.5"
+                stroke="#7bc62d"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
+                <path d="M9 12l2 2l4 -4" />
+              </svg>
+            </Button>
+          </DialogTrigger>
+          <DialogContent class="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Nuevo peso</DialogTitle>
+              <DialogDescription>
+                Aqui podras guardar tu nuevo peso, para poder visualizar tu
+                progreso en Profile.
+              </DialogDescription>
+            </DialogHeader>
+            <div class="grid gap-4 py-4">
+              <div class="grid grid-cols-4 items-center gap-4">
+                <Label for="newWeight" class="text-right"> Nuevo Peso: </Label>
+                <Input
+                  v-model="newWeight"
+                  id="newWeight"
+                  name="newWeight"
+                  type="number"
+                  :placeholder="newWeight"
+                  class="col-span-3 p-1"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="submit" @click="validate"> Guardar </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
-      <div>
+      <div v-if="statusValue">
         <Card class="bg-primary text-accent">
           <CardHeader>
             <CardTitle>Plan de Gimnasio</CardTitle>
@@ -308,27 +443,48 @@
           </CardFooter>
         </Card>
       </div>
+
       <div
+        v-if="!statusValue"
         class="fixed inset-0 flex items-center justify-center pointer-events-none"
       >
-        <button
-          class="bg-green-500 text-white rounded-full p-4 shadow-lg pointer-events-auto"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M12 4v16m8-8H4"
-            />
-          </svg>
-        </button>
+        <AlertDialog>
+          <AlertDialogTrigger as-child>
+            <button
+              class="bg-green-500 text-white rounded-full p-4 shadow-lg pointer-events-auto"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+            </button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Agregar rutina general</AlertDialogTitle>
+              <AlertDialogDescription>
+                Si deseas agregar una rutina dale al boton de Continue! Recuerda
+                que debes haber actualziaod tus datos en Profile.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction @click="addNewPlan"
+                >Continue</AlertDialogAction
+              >
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </main>
     <footer class="fixed bottom-0 left-0 right-0 z-10">

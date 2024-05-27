@@ -8,6 +8,8 @@ import {
   addDoc,
   query,
   where,
+  orderBy,
+  limit,
 } from "firebase/firestore";
 
 const currentYear = new Date().getFullYear();
@@ -47,7 +49,7 @@ const getUser = async (uuid) => {
 async function updateUser(uuid, data) {
   console.log(uuid, data);
   const docRef = doc(db, "users", uuid);
-  
+
   try {
     await updateDoc(docRef, data);
     console.log("Documento actualizado con ID: ", uuid);
@@ -475,4 +477,64 @@ async function getPlan(bmi) {
   }
 }
 
-export { addUser, getUser, updateUser, addPlans, getPlan };
+async function addHistoryEntry(uuid, weight, bmi) {
+  const userHistoryCollection = collection(db, `history/${uuid}/entries`);
+  const lastEntryQuery = query(
+    userHistoryCollection,
+    orderBy("id", "desc"),
+    limit(1)
+  );
+
+  try {
+    const querySnapshot = await getDocs(lastEntryQuery);
+    let newId = 1;
+
+    if (!querySnapshot.empty) {
+      const lastEntry = querySnapshot.docs[0].data();
+      newId = lastEntry.id + 1;
+    }
+
+    const newEntry = {
+      id: newId,
+      weight,
+      bmi,
+      date: new Date().toISOString(),
+    };
+
+    const newDocRef = doc(userHistoryCollection, newId.toString());
+    await setDoc(newDocRef, newEntry);
+
+    console.log(`History entry added with ID ${newId} for user ${uuid}`);
+  } catch (e) {
+    console.error("Error adding history entry: ", e);
+  }
+}
+
+async function getUserHistory(uuid) {
+  const userHistoryCollection = collection(db, `history/${uuid}/entries`);
+  const historyQuery = query(userHistoryCollection, orderBy('id', 'desc'));
+
+  try {
+    const querySnapshot = await getDocs(historyQuery);
+    const entries = [];
+
+    querySnapshot.forEach(doc => {
+      entries.push(doc.data());
+    });
+
+    return entries;
+  } catch (e) {
+    console.error("Error getting history entries: ", e);
+    return [];
+  }
+}
+
+export {
+  addUser,
+  getUser,
+  updateUser,
+  addPlans,
+  getPlan,
+  addHistoryEntry,
+  getUserHistory,
+};
